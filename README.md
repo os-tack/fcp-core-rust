@@ -2,8 +2,9 @@
 
 **Deprecated.** This crate has no consumers: [fcp-rust](https://github.com/os-tack/fcp-rust) and
 [fcp-regex](https://github.com/os-tack/fcp-regex) each vendor their own self-contained copy of the
-FCP core modules under `src/fcpcore/` and do not depend on this crate. It was never published to
-crates.io (tags stop at v0.1.1). It is kept around for reference only — do not build new servers
+FCP core modules under `src/fcpcore/` and do not depend on this crate. The last published
+crates.io version is [`fcp-core` v0.1.1](https://crates.io/crates/fcp-core); v0.1.2 is the final
+release before deprecation. It is kept around for reference only — do not build new servers
 against it; port the modules you need directly into your server's own tree instead, as fcp-rust
 and fcp-regex do.
 
