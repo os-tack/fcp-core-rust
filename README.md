@@ -1,10 +1,17 @@
 # fcp-core-rust
 
+**Deprecated.** This crate has no consumers: [fcp-rust](https://github.com/os-tack/fcp-rust) and
+[fcp-regex](https://github.com/os-tack/fcp-regex) each vendor their own self-contained copy of the
+FCP core modules under `src/fcpcore/` and do not depend on this crate. It was never published to
+crates.io (tags stop at v0.1.1). It is kept around for reference only — do not build new servers
+against it; port the modules you need directly into your server's own tree instead, as fcp-rust
+and fcp-regex do.
+
 Shared Rust framework for building [FCP](https://github.com/os-tack/fcp) (File Context Protocol) servers.
 
 ## What It Provides
 
-fcp-core-rust extracts the common infrastructure that every FCP server needs — tokenizer, operation parser, verb registry, event log, session lifecycle, and response formatter — into a standalone library crate. FCP servers like [fcp-rust](https://github.com/os-tack/fcp-rust) and [fcp-regex](https://github.com/os-tack/fcp-regex) depend on it.
+fcp-core-rust extracts the common infrastructure an FCP server needs — tokenizer, operation parser, verb registry, event log, session lifecycle, and response formatter — into a standalone library crate.
 
 This is the Rust equivalent of the [fcp-core](https://github.com/os-tack/fcp-core) TypeScript/Python package.
 
@@ -71,7 +78,7 @@ let card = reg.generate_reference_card(None);
 ## Development
 
 ```bash
-cargo test          # Run all tests (92)
+cargo test          # Run all tests (95)
 cargo clippy        # Run lints
 ```
 

@@ -1,37 +1,40 @@
 /// Tokenize splits an FCP operation string into tokens, handling quoted strings,
 /// escape sequences, and embedded newlines.
 pub fn tokenize(input: &str) -> Vec<String> {
-    let bytes = input.as_bytes();
-    let n = bytes.len();
+    // Iterate over chars, not bytes — indexing raw UTF-8 bytes and casting
+    // them individually to `char` splits multi-byte sequences apart and
+    // produces mojibake for any non-ASCII input.
+    let chars: Vec<char> = input.chars().collect();
+    let n = chars.len();
     let mut tokens = Vec::new();
     let mut i = 0;
 
     while i < n {
         // Skip spaces
-        while i < n && bytes[i] == b' ' {
+        while i < n && chars[i] == ' ' {
             i += 1;
         }
         if i >= n {
             break;
         }
 
-        if bytes[i] == b'"' {
+        if chars[i] == '"' {
             // Fully quoted token
             i += 1;
             let mut token = String::new();
-            while i < n && bytes[i] != b'"' {
-                if bytes[i] == b'\\' && i + 1 < n {
-                    let next = bytes[i + 1];
-                    if next == b'n' {
+            while i < n && chars[i] != '"' {
+                if chars[i] == '\\' && i + 1 < n {
+                    let next = chars[i + 1];
+                    if next == 'n' {
                         token.push('\n');
                         i += 2;
                     } else {
                         i += 1;
-                        token.push(bytes[i] as char);
+                        token.push(chars[i]);
                         i += 1;
                     }
                 } else {
-                    token.push(bytes[i] as char);
+                    token.push(chars[i]);
                     i += 1;
                 }
             }
@@ -42,23 +45,23 @@ pub fn tokenize(input: &str) -> Vec<String> {
         } else {
             // Unquoted token (may contain embedded quoted sections)
             let mut token = String::new();
-            while i < n && bytes[i] != b' ' {
-                if bytes[i] == b'"' {
+            while i < n && chars[i] != ' ' {
+                if chars[i] == '"' {
                     token.push('"');
                     i += 1;
-                    while i < n && bytes[i] != b'"' {
-                        if bytes[i] == b'\\' && i + 1 < n {
-                            let next = bytes[i + 1];
-                            if next == b'n' {
+                    while i < n && chars[i] != '"' {
+                        if chars[i] == '\\' && i + 1 < n {
+                            let next = chars[i + 1];
+                            if next == 'n' {
                                 token.push('\n');
                                 i += 2;
                             } else {
                                 i += 1;
-                                token.push(bytes[i] as char);
+                                token.push(chars[i]);
                                 i += 1;
                             }
                         } else {
-                            token.push(bytes[i] as char);
+                            token.push(chars[i]);
                             i += 1;
                         }
                     }
@@ -67,7 +70,7 @@ pub fn tokenize(input: &str) -> Vec<String> {
                         i += 1;
                     }
                 } else {
-                    token.push(bytes[i] as char);
+                    token.push(chars[i]);
                     i += 1;
                 }
             }
@@ -219,6 +222,21 @@ mod tests {
     fn test_tokenize_colons_in_value() {
         let got = tokenize("url:http://example.com");
         assert_eq!(got, vec!["url:http://example.com"]);
+    }
+
+    #[test]
+    fn test_tokenize_unicode_labels() {
+        // Regression test: the old byte-indexed implementation cast individual
+        // UTF-8 bytes to `char`, splitting multi-byte sequences and producing
+        // mojibake. Cover 2-, 3-, and 4-byte encodings.
+        let got = tokenize("café 日本語 😀");
+        assert_eq!(got, vec!["café", "日本語", "😀"]);
+    }
+
+    #[test]
+    fn test_tokenize_unicode_quoted_label() {
+        let got = tokenize(r#"label "Café Étudiant""#);
+        assert_eq!(got, vec!["label", "Café Étudiant"]);
     }
 
     #[test]

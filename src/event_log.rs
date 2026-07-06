@@ -42,8 +42,14 @@ impl<T: Clone> EventLog<T> {
         self.cursor = self.events.len();
     }
 
-    /// Creates a named checkpoint at the current cursor position.
+    /// Creates a named checkpoint at the current cursor position, truncating
+    /// any redo tail first (same semantics as `append`).
     pub fn checkpoint(&mut self, name: &str) {
+        if self.cursor < self.events.len() {
+            self.events.truncate(self.cursor);
+            // Remove checkpoints pointing beyond new length
+            self.checkpoints.retain(|_, idx| *idx <= self.cursor);
+        }
         self.checkpoints.insert(name.to_string(), self.cursor);
         self.events.push(Entry::Checkpoint);
         self.cursor = self.events.len();
@@ -278,6 +284,27 @@ mod tests {
         log.append("a");
         let result = log.undo_to("nonexistent");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_checkpoint_truncates_redo_tail() {
+        // Regression test: checkpoint() must truncate the redo tail exactly
+        // like append() does. Before the fix, checkpoint() jumped the cursor
+        // to events.len() without dropping the un-truncated events after the
+        // cursor, so a subsequent undo would walk events that were never
+        // re-applied and corrupt the model.
+        let mut log = EventLog::new();
+        log.append("a");
+        log.append("b");
+        log.append("c");
+        log.undo(2); // cursor back to 1; "b" and "c" sit in the redo tail
+        log.checkpoint("cp1");
+        assert_eq!(log.length(), 2, "checkpoint should truncate the redo tail before appending its sentinel");
+        assert_eq!(log.recent(0), vec!["a"]);
+        assert!(!log.can_redo(), "redo tail must be gone after checkpoint");
+
+        let undone = log.undo(1);
+        assert_eq!(undone, vec!["a"], "undo after checkpoint must only see truly-applied events");
     }
 
     #[test]
