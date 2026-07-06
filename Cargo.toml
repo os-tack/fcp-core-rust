@@ -1,6 +1,6 @@
 [package]
 name = "fcp-core"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Shared FCP (File Context Protocol) framework for building FCP servers in Rust"
 repository = "https://github.com/os-tack/fcp-core-rust"
